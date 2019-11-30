@@ -1,0 +1,7 @@
+apiVersion: logging.hyperspike.io/v1beta1
+kind: Pipeline
+metadata:
+  name: pipeline-sample
+spec:
+  # Add fields here
+  foo: bar

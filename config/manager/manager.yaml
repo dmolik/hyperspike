@@ -1,0 +1,40 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: hyperspike-manager
+  name: system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hyperspike-manager
+  namespace: system
+  labels:
+    control-plane: hyperspike-manager
+spec:
+  selector:
+    matchLabels:
+      control-plane: hyperspike-manager
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        control-plane: hyperspike-manager
+    spec:
+      containers:
+      - command:
+        - /hyperspike
+        args:
+        - --enable-leader-election
+        image: hyperspike:latest
+        name: hyperspike
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+      terminationGracePeriodSeconds: 10

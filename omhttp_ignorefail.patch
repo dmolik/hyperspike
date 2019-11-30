@@ -1,0 +1,107 @@
+diff --git a/contrib/omhttp/omhttp.c b/contrib/omhttp/omhttp.c
+index 35e27056a..11fa44147 100644
+--- a/contrib/omhttp/omhttp.c
++++ b/contrib/omhttp/omhttp.c
+@@ -138,6 +138,7 @@ typedef struct instanceConf_s {
+ 	uchar *caCertFile;
+ 	uchar *myCertFile;
+ 	uchar *myPrivKeyFile;
++	sbool ignoreServErr;
+ 	sbool reloadOnHup;
+ 	sbool retryFailures;
+ 	int ratelimitInterval;
+@@ -202,6 +203,7 @@ static struct cnfparamdescr actpdescr[] = {
+ 	{ "compress.level", eCmdHdlrInt, 0 },
+ 	{ "usehttps", eCmdHdlrBinary, 0 },
+ 	{ "errorfile", eCmdHdlrGetWord, 0 },
++	{ "ignoreserverr", eCmdHdlrBinary, 0 },
+ 	{ "template", eCmdHdlrGetWord, 0 },
+ 	{ "allowunsignedcerts", eCmdHdlrBinary, 0 },
+ 	{ "skipverifyhost", eCmdHdlrBinary, 0 },
+@@ -370,6 +372,7 @@ CODESTARTdbgPrintInstInfo
+ 	dbgprintf("\ttls.mycert='%s'\n", pData->myCertFile);
+ 	dbgprintf("\ttls.myprivkey='%s'\n", pData->myPrivKeyFile);
+ 	dbgprintf("\treloadonhup='%d'\n", pData->reloadOnHup);
++	dbgprintf("\tignore server error='%d'\n", pData->ignoreServErr);
+ 	dbgprintf("\tretry='%d'\n", pData->retryFailures);
+ 	dbgprintf("\tretry.ruleset='%s'\n", pData->retryRulesetName);
+ 	dbgprintf("\tratelimit.interval='%d'\n", pData->ratelimitInterval);
+@@ -789,17 +792,30 @@ checkResult(wrkrInstanceData_t *pWrkrData, uchar *reqmsg)
+ 	if (statusCode == 0) {
+ 		// request failed, suspend or retry
+ 		STATSCOUNTER_ADD(ctrMessagesFail, mutCtrMessagesFail, numMessages);
+-		iRet = RS_RET_SUSPENDED;
++		if (pData->ignoreServErr) {
++			iRet = RS_RET_OK;
++		} else {
++			iRet = RS_RET_SUSPENDED;
++		}
+ 	} else if (statusCode >= 500) {
+ 		// server error, suspend or retry
+ 		STATSCOUNTER_INC(ctrHttpStatusFail, mutCtrHttpStatusFail);
+ 		STATSCOUNTER_ADD(ctrMessagesFail, mutCtrMessagesFail, numMessages);
+-		iRet = RS_RET_SUSPENDED;
++		if (pData->ignoreServErr) {
++			iRet = RS_RET_OK;
++		} else {
++			iRet = RS_RET_SUSPENDED;
++		}
+ 	} else if (statusCode >= 300) {
+ 		// redirection or client error, NO suspend nor retry
+ 		STATSCOUNTER_INC(ctrHttpStatusFail, mutCtrHttpStatusFail);
+ 		STATSCOUNTER_ADD(ctrMessagesFail, mutCtrMessagesFail, numMessages);
+ 		iRet = RS_RET_DATAFAIL;
++		if (pData->ignoreServErr) {
++			iRet = RS_RET_OK;
++		} else {
++			iRet = RS_RET_SUSPENDED;
++		}
+ 	} else {
+ 		// success, normal state
+ 		// includes 2XX (success like 200-OK)
+@@ -1108,14 +1124,20 @@ curlPost(wrkrInstanceData_t *pWrkrData, uchar *message, int msglen, uchar **tpls
+ 
+ 	if (curlCode != CURLE_OK) {
+ 		STATSCOUNTER_INC(ctrHttpRequestFail, mutCtrHttpRequestFail);
+-		LogError(0, RS_RET_SUSPENDED,
+-			"omhttp: suspending ourselves due to server failure %lld: %s",
+-			(long long) curlCode, errbuf);
+-		// Check the result here too and retry if needed, then we should suspend
+-		// Usually in batch mode we clobber any iRet values, but probably not a great
+-		// idea to keep hitting a dead server. The http status code will be 0 at this point.
+-		checkResult(pWrkrData, message);
+-		ABORT_FINALIZE(RS_RET_SUSPENDED);
++		if (!pWrkrData->pData->ignoreServErr) {
++			LogError(0, RS_RET_SUSPENDED,
++				"omhttp: suspending ourselves due to server failure %lld: %s",
++				(long long) curlCode, errbuf);
++			// Check the result here too and retry if needed, then we should suspend
++			// Usually in batch mode we clobber any iRet values, but probably not a great
++			// idea to keep hitting a dead server. The http status code will be 0 at this point.
++			checkResult(pWrkrData, message);
++			ABORT_FINALIZE(RS_RET_SUSPENDED);
++		} else {
++			LogError(0, RS_RET_DATAFAIL,
++				"omhttp: continuing despite server failure %lld: %s",
++				(long long) curlCode, errbuf);
++		}
+ 	} else {
+ 		STATSCOUNTER_INC(ctrHttpRequestSuccess, mutCtrHttpRequestSuccess);
+ 	}
+@@ -1727,6 +1749,7 @@ setInstParamDefaults(instanceData *const pData)
+ 	pData->myCertFile = NULL;
+ 	pData->myPrivKeyFile = NULL;
+ 	pData->reloadOnHup= 0;
++	pData->ignoreServErr = 0;
+ 	pData->retryFailures = 0;
+ 	pData->ratelimitBurst = 20000;
+ 	pData->ratelimitInterval = 600;
+@@ -1858,6 +1881,8 @@ CODESTARTnewActInst
+ 			}
+ 		} else if(!strcmp(actpblk.descr[i].name, "reloadonhup")) {
+ 			pData->reloadOnHup= pvals[i].val.d.n;
++		} else if(!strcmp(actpblk.descr[i].name, "ignoreserverr")) {
++			pData->ignoreServErr = pvals[i].val.d.n;
+ 		} else if(!strcmp(actpblk.descr[i].name, "retry")) {
+ 			pData->retryFailures = pvals[i].val.d.n;
+ 		} else if(!strcmp(actpblk.descr[i].name, "retry.ruleset")) {

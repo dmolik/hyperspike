@@ -1,0 +1,7 @@
+version: "2"
+domain: hyperspike.io
+repo: github.com/dmolik/hyperspike
+resources:
+- group: logging
+  version: v1beta1
+  kind: Pipeline
