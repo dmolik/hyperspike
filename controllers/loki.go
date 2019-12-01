@@ -167,8 +167,13 @@ func newLokiStatefulSet(req *loggingv1beta1.Pipeline) (*appsv1.StatefulSet, erro
 	requestMemory, _ := resource.ParseQuantity("64Mi")
 
 	size, _ := resource.ParseQuantity("10Gi")
-
+	if req.Spec.StorageSize != "" {
+		size, _ = resource.ParseQuantity(req.Spec.StorageSize)
+	}
 	storageClass := "ebs-sc"
+	if req.Spec.StorageClass != "" {
+		storageClass = req.Spec.StorageClass
+	}
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",

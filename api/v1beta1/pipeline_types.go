@@ -28,8 +28,11 @@ type PipelineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Pipeline. Edit Pipeline_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// The PVC Storage Class to use for persisting log data.
+	StorageClass string `json:"storageClass,omitempty"`
+
+	// The PVC disk size to use for storing log data.
+	StorageSize string `json:"storageSize,omitempty"`
 }
 
 // PipelineStatus defines the observed state of Pipeline

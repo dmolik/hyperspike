@@ -34,9 +34,11 @@ spec:
         spec:
           description: PipelineSpec defines the desired state of Pipeline
           properties:
-            foo:
-              description: Foo is an example field of Pipeline. Edit Pipeline_types.go
-                to remove/update
+            storageClass:
+              description: The PVC Storage Class to use for persisting log data.
+              type: string
+            storageSize:
+              description: The PVC disk size to use for storing log data.
               type: string
           type: object
         status:
