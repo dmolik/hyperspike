@@ -6,3 +6,5 @@ spec:
   loki:
     storageClass: ebs-sc
     storageSize:  20Gi
+  rsyslog:
+    image: graytshirt/rsyslog:0.2.5
