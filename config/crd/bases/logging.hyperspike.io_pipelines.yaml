@@ -40,6 +40,9 @@ spec:
             loki:
               description: Loki configuration for Storage, Indexing and Querying.
               properties:
+                image:
+                  description: The loki container image to use, defaults to grafana/loki:v1.0.0
+                  type: string
                 storageClass:
                   description: The PVC Storage Class to use for persisting log data.
                   type: string
@@ -51,7 +54,7 @@ spec:
               description: Rsyslog configuration for Collectors and Aggregator
               properties:
                 image:
-                  description: The rsyslog image to use
+                  description: The rsyslog image to use, defaults to graytshirt/rsyslog:0.2.5
                   type: string
               type: object
           type: object

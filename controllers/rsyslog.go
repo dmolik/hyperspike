@@ -19,8 +19,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-var DefaultRsyslogImage string = "graytshirt/rsyslog:0.2.5"
-
 func genRsyslogLabels(req *loggingv1beta1.Pipeline) (string, map[string]string) {
 	labels := map[string]string{
 		"app":        "rsyslog",
@@ -74,9 +72,7 @@ func updateRsyslogImage(req *loggingv1beta1.Pipeline, r *PipelineReconciler) err
 	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: obj.Name, Namespace: obj.Namespace}, found)
 	if err != nil && errors.IsNotFound(err) {
 		logger.Error(err, "Failed to find deployment", "Namespace", obj.Namespace, "Name", obj.Name)
-		if err != nil {
-			return err
-		}
+		return err
 	}
 	if found.Spec.Template.Spec.Containers[0].Image != image {
 		found.Spec.Template.Spec.Containers[0].Image = image
@@ -95,9 +91,7 @@ func updateRsyslogImage(req *loggingv1beta1.Pipeline, r *PipelineReconciler) err
 	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: ds.Name, Namespace: ds.Namespace}, foundDS)
 	if err != nil && errors.IsNotFound(err) {
 		logger.Error(err, "Failed to find daemonset", "Namespace", ds.Namespace, "Name", ds.Name)
-		if err != nil {
-			return err
-		}
+		return err
 	}
 	if foundDS.Spec.Template.Spec.Containers[0].Image != image {
 		foundDS.Spec.Template.Spec.Containers[0].Image = image

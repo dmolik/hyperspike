@@ -53,6 +53,36 @@ func createLokiConfig(req *loggingv1beta1.Pipeline, r *PipelineReconciler) error
 	return nil
 }
 
+func updateLokiImage(req *loggingv1beta1.Pipeline, r *PipelineReconciler) error {
+	logger := r.Log.WithValues("pipeline", req.Name)
+
+	image := DefaultLokiImage
+	if req.Spec.Loki != (loggingv1beta1.LokiSpec{}) && req.Spec.Loki.Image != "" {
+		image = req.Spec.Loki.Image
+	}
+
+	obj := &appsv1.StatefulSet{}
+	obj.Name, _ = genLokiLabels(req)
+	obj.Namespace = req.Namespace
+	found := &appsv1.StatefulSet{}
+
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: obj.Name, Namespace: obj.Namespace}, found)
+	if err != nil {
+		logger.Error(err, "Failed to find statefulset", "Namespace", obj.Namespace, "Name", obj.Name)
+		return err
+	}
+	if found.Spec.Template.Spec.Containers[0].Image != image {
+		found.Spec.Template.Spec.Containers[0].Image = image
+		err = r.Client.Update(context.TODO(), found)
+		if err != nil {
+			logger.Error(err, "Failed to update statefulset image", "Namespace", obj.Namespace, "Name", obj.Name)
+			return err
+		}
+	}
+
+	return nil
+}
+
 func createLokiService(req *loggingv1beta1.Pipeline, r *PipelineReconciler) error {
 	logger := r.Log.WithValues("pipeline", req.Name)
 	cm, err := newLokiService(req)
@@ -174,6 +204,11 @@ func newLokiStatefulSet(req *loggingv1beta1.Pipeline) (*appsv1.StatefulSet, erro
 	if req.Spec.Loki != (loggingv1beta1.LokiSpec{}) && req.Spec.Loki.StorageClass != "" {
 		storageClass = req.Spec.Loki.StorageClass
 	}
+	image := DefaultLokiImage
+	if req.Spec.Loki != (loggingv1beta1.LokiSpec{}) && req.Spec.Loki.Image != "" {
+		image = req.Spec.Loki.Image
+	}
+
 	return &appsv1.StatefulSet{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "StatefulSet",
@@ -244,7 +279,7 @@ func newLokiStatefulSet(req *loggingv1beta1.Pipeline) (*appsv1.StatefulSet, erro
 					Containers: []corev1.Container{
 						{
 							Name:  "loki",
-							Image: "grafana/loki:v1.0.0",
+							Image: image,
 							Args: []string{
 								"-config.file=/etc/loki/loki.yaml",
 							},

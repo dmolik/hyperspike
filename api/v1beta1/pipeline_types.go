@@ -22,12 +22,15 @@ import (
 
 // RsyslogSpec defines the desired state of the Aggregator and Collector
 type RsyslogSpec struct {
-	// The rsyslog image to use
+	// The rsyslog image to use, defaults to graytshirt/rsyslog:0.2.5
 	Image string `json:"image,omitempty"`
 }
 
 // LokiSpec defines the desired state of the Storage, Index, and Querying components.
 type LokiSpec struct {
+	// The loki container image to use, defaults to grafana/loki:v1.0.0
+	Image string `json:"image,omitempty"`
+
 	// The PVC Storage Class to use for persisting log data.
 	StorageClass string `json:"storageClass,omitempty"`
 

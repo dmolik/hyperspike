@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-VERSION := 0.1.41
+VERSION := 0.1.43
 IMG ?= graytshirt/hyperspike:$(VERSION)
 RSYS ?= graytshirt/rsyslog:0.2.5
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)

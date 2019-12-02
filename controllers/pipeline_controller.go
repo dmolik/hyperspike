@@ -96,6 +96,10 @@ func (r *PipelineReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		logger.Info("Loki StatefulSet, ", err)
 		return ctrl.Result{}, err
 	}
+	if err = updateLokiImage(instance, r); err != nil {
+		logger.Error(err, "Loki image update")
+		return ctrl.Result{}, err
+	}
 	if err = createLokiService(instance, r); err != nil {
 		logger.Info("Loki Service, ", err)
 		return ctrl.Result{}, err
