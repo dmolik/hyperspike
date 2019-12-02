@@ -80,7 +80,11 @@ func (r *PipelineReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 	if err = createRsyslogService(instance, r); err != nil {
-		logger.Info("Rsyslog Service, ", err)
+		logger.Error(err, "Rsyslog Service")
+		return ctrl.Result{}, err
+	}
+	if err = updateRsyslogImage(instance, r); err != nil {
+		logger.Error(err, "Rsyslog Image Update")
 		return ctrl.Result{}, err
 	}
 

@@ -34,12 +34,26 @@ spec:
         spec:
           description: PipelineSpec defines the desired state of Pipeline
           properties:
-            storageClass:
-              description: The PVC Storage Class to use for persisting log data.
-              type: string
-            storageSize:
-              description: The PVC disk size to use for storing log data.
-              type: string
+            grafana:
+              description: Loki configuration for dashboarding.
+              type: object
+            loki:
+              description: Loki configuration for Storage, Indexing and Querying.
+              properties:
+                storageClass:
+                  description: The PVC Storage Class to use for persisting log data.
+                  type: string
+                storageSize:
+                  description: The PVC disk size to use for storing log data.
+                  type: string
+              type: object
+            rsyslog:
+              description: Rsyslog configuration for Collectors and Aggregator
+              properties:
+                image:
+                  description: The rsyslog image to use
+                  type: string
+              type: object
           type: object
         status:
           description: PipelineStatus defines the observed state of Pipeline

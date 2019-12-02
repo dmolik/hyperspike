@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: hyperspike
   newName: graytshirt/hyperspike
-  newTag: 0.1.40
+  newTag: 0.1.41

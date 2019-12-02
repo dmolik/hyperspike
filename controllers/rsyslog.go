@@ -19,6 +19,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+var DefaultRsyslogImage string = "graytshirt/rsyslog:0.2.5"
+
 func genRsyslogLabels(req *loggingv1beta1.Pipeline) (string, map[string]string) {
 	labels := map[string]string{
 		"app":        "rsyslog",
@@ -53,6 +55,58 @@ func createRsyslogConfig(req *loggingv1beta1.Pipeline, r *PipelineReconciler) er
 		logger.Info("Skip reconcile: Rsyslog ConfigMap already exists", "ConfigMap.Namespace", found.Namespace, "ConfigMap.Name", found.Name)
 	}
 
+	return nil
+}
+
+func updateRsyslogImage(req *loggingv1beta1.Pipeline, r *PipelineReconciler) error {
+	logger := r.Log.WithValues("pipeline", req.Name)
+
+	image := DefaultRsyslogImage
+	if req.Spec.Rsyslog != (loggingv1beta1.RsyslogSpec{}) && req.Spec.Rsyslog.Image != "" {
+		image = req.Spec.Rsyslog.Image
+	}
+
+	obj := &appsv1.Deployment{}
+	obj.Name, _ = genRsyslogLabels(req)
+	obj.Namespace = req.Namespace
+	found := &appsv1.Deployment{}
+
+	err := r.Client.Get(context.TODO(), types.NamespacedName{Name: obj.Name, Namespace: obj.Namespace}, found)
+	if err != nil && errors.IsNotFound(err) {
+		logger.Error(err, "Failed to find deployment", "Namespace", obj.Namespace, "Name", obj.Name)
+		if err != nil {
+			return err
+		}
+	}
+	if found.Spec.Template.Spec.Containers[0].Image != image {
+		found.Spec.Template.Spec.Containers[0].Image = image
+		err = r.Client.Update(context.TODO(), found)
+		logger.Error(err, "Failed to update deployment image", "Namespace", obj.Namespace, "Name", obj.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	ds := &appsv1.DaemonSet{}
+	ds.Name, _ = genRsyslogLabels(req)
+	ds.Namespace = req.Namespace
+	foundDS := &appsv1.DaemonSet{}
+
+	err = r.Client.Get(context.TODO(), types.NamespacedName{Name: ds.Name, Namespace: ds.Namespace}, foundDS)
+	if err != nil && errors.IsNotFound(err) {
+		logger.Error(err, "Failed to find daemonset", "Namespace", ds.Namespace, "Name", ds.Name)
+		if err != nil {
+			return err
+		}
+	}
+	if foundDS.Spec.Template.Spec.Containers[0].Image != image {
+		foundDS.Spec.Template.Spec.Containers[0].Image = image
+		err = r.Client.Update(context.TODO(), found)
+		logger.Error(err, "Failed to update deployment image", "Namespace", ds.Namespace, "Name", ds.Name)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -389,6 +443,11 @@ func newRsyslogDaemonSet(req *loggingv1beta1.Pipeline) (*appsv1.DaemonSet, error
 	dir := corev1.HostPathDirectory
 	dirCreate := corev1.HostPathDirectoryOrCreate
 
+	image := DefaultRsyslogImage
+	if req.Spec.Rsyslog != (loggingv1beta1.RsyslogSpec{}) && req.Spec.Rsyslog.Image != "" {
+		image = req.Spec.Rsyslog.Image
+	}
+
 	trues := true
 	return &appsv1.DaemonSet{
 		TypeMeta: metav1.TypeMeta{
@@ -481,7 +540,7 @@ func newRsyslogDaemonSet(req *loggingv1beta1.Pipeline) (*appsv1.DaemonSet, error
 					Containers: []corev1.Container{
 						{
 							Name:  "rsyslog",
-							Image: "graytshirt/rsyslog:0.2.5",
+							Image: image,
 							Command: []string{
 								"/usr/sbin/rsyslogd",
 							},
@@ -543,6 +602,11 @@ func newRsyslogDeployment(req *loggingv1beta1.Pipeline) (*appsv1.Deployment, err
 	requestCpu, _ := resource.ParseQuantity("50m")
 	requestMemory, _ := resource.ParseQuantity("64Mi")
 
+	image := DefaultRsyslogImage
+	if req.Spec.Rsyslog != (loggingv1beta1.RsyslogSpec{}) && req.Spec.Rsyslog.Image != "" {
+		image = req.Spec.Rsyslog.Image
+	}
+
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Deployment",
@@ -595,7 +659,7 @@ func newRsyslogDeployment(req *loggingv1beta1.Pipeline) (*appsv1.Deployment, err
 					Containers: []corev1.Container{
 						{
 							Name:  "rsyslog",
-							Image: "graytshirt/rsyslog:0.2.5",
+							Image: image,
 							Command: []string{
 								"/usr/sbin/rsyslogd",
 							},

@@ -1,6 +1,6 @@
 
 # Image URL to use all building/pushing image targets
-VERSION := 0.1.40
+VERSION := 0.1.41
 IMG ?= graytshirt/hyperspike:$(VERSION)
 RSYS ?= graytshirt/rsyslog:0.2.5
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
@@ -39,7 +39,7 @@ deploy: manifests
 # Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
 	@$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-	@kustomize build config/crd
+	@kustomize build config/crd > /dev/null
 	@cd config/manager && kustomize edit set image hyperspike=${IMG}
 	@kustomize build config/default > manifest-$(VERSION).yaml
 

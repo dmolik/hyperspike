@@ -20,6 +20,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// RsyslogSpec defines the desired state of the Aggregator and Collector
+type RsyslogSpec struct {
+	// The rsyslog image to use
+	Image string `json:"image,omitempty"`
+}
+
+// LokiSpec defines the desired state of the Storage, Index, and Querying components.
+type LokiSpec struct {
+	// The PVC Storage Class to use for persisting log data.
+	StorageClass string `json:"storageClass,omitempty"`
+
+	// The PVC disk size to use for storing log data.
+	StorageSize string `json:"storageSize,omitempty"`
+}
+
+// GrafanaSpec defines the desired state of the dashboard service.
+type GrafanaSpec struct {
+}
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -28,11 +47,14 @@ type PipelineSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// The PVC Storage Class to use for persisting log data.
-	StorageClass string `json:"storageClass,omitempty"`
+	// Loki configuration for Storage, Indexing and Querying.
+	Loki LokiSpec `json:"loki,omitempty"`
 
-	// The PVC disk size to use for storing log data.
-	StorageSize string `json:"storageSize,omitempty"`
+	// Rsyslog configuration for Collectors and Aggregator
+	Rsyslog RsyslogSpec `json:"rsyslog,omitempty"`
+
+	// Loki configuration for dashboarding.
+	Grafana GrafanaSpec `json:"grafana,omitempty"`
 }
 
 // PipelineStatus defines the observed state of Pipeline

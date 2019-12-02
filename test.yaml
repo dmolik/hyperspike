@@ -3,5 +3,6 @@ apiVersion: logging.hyperspike.io/v1beta1
 metadata:
   name: test
 spec:
-  storageClass: ebs-sc
-  storageSize:  20Gi
+  loki:
+    storageClass: ebs-sc
+    storageSize:  20Gi
